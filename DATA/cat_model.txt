@@ -1,0 +1,27 @@
+model
+{
+
+  for(i in 1:n){
+  	Y[i] ~ dnorm(mu[i],tau2)
+        mu[i] = alpha[Breed[i]]+beta[1]+beta[2]*Dose[i]+beta[3]*Type[i]
+
+  }
+
+  # Priors
+  for(i in 1:p){
+        beta[i] ~ dnorm(0,1e-10)
+  }
+
+  for(j in 1:J){
+        alpha[j] ~ dnorm(0,tau2.alpha)
+  }
+
+  tau2 ~ dgamma(0.01,0.01)
+  tau2.alpha ~ dgamma(0.01,0.01)
+
+  # Need to have model calculate variances
+  sig2 = 1/tau2
+  sig2.alpha = 1/tau2.alpha
+
+  
+}

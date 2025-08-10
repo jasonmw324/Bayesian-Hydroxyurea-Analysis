@@ -1,0 +1,305 @@
+---
+title: "Bayesian Analysis of Hydroxyurea Treatment Effects on Cats with Erythrocytosis"
+author: "Jason Withrow"
+date: "2024-12-02"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r,echo=FALSE,results='hide',warning=FALSE,message=FALSE}
+library(rjags)
+library(tidyverse)
+library(kableExtra)
+
+catsData=read.table("DATA/cats.txt",header = TRUE)
+
+```
+# Introduction
+
+The purpose of this study is to explore the efficacy and effects of various doses of the drug hydroxyurea and see the effect it has on the packed cell volume (PCV) in cats with erythrocytosis. Erythrocytosis is defined by the increase in total red blood cells and is diagnosed through a complete blood cell count (CBC) test. Hydroxyurea was proposed as a potential treatment to reduce packed cell volume. 
+
+The data provided was of 40 cats all with erythrocytosis with half having primary erythrocytosis and the other half having secondary erythrocytosis. This was expressed in a Type variable with Type = 1 corresponding to primary erythrocytosis and Type = 0 corresponding to secondary erythrocytosis. The cats belonged to one of five breeds which was captured by the Breed variable and that takes values A, B, C, D, or E with breeds A, B, C being classified as domestic cats and breeds D and E being classified as non-domestic cats. This domestic variable was not originally in the data set but was added with Domestic = 1 meaning the cat is domestic and Domestic = 0 meaning the cat is non-domestic. Each cat was given a specific dose of hydroxyurea for a period of 3 months and that is captured by the variable Dose. Finally recorded was the change in packed cell volume ($\Delta PCV$) following the treatment and that is captured in the variable DeltaPCV where the bigger the decrease the more effective the treatment.
+
+The 2 main goals of this study are to determine if a higher dose of hydroxyurea is associated with a greater reduction in PCV. Additionally we want to see when controlling for the dost of hydroxyurea administereed and the type of erythrocytosis, do domestic breeds of cats have a different expected change in pack cell volume than non-domestic cats
+
+
+
+# Methodology
+
+## Model Description
+
+To analyze the efficacy of hydroxyurea in reducing packed cell volume in cats a Bayesian linear regression model was developed.
+
+Let $Y_{ij}$ be the values of the response variable ($\Delta PCV$) for cat i within breed j and we are assuming $Y_{ij}$ are independent of each other. Let $\beta=(\beta_1,\beta_2,\beta_3)$
+
+The sampling model is given by:
+
+$$Y_{ij}|\alpha, \beta,\sigma^2,x_{ij}\sim N(\mu_{ij},\sigma^2) \quad for\quad i=1,...,n_j\quad and \quad j =1,...,J $$
+and the linear model is given by:
+
+
+
+
+$$\mu_{ij}=\alpha_j+\beta_1+\beta_2(Dose)_{ij}+\beta_3(Type)_{ij}$$
+Where
+
+- $\alpha_j$ is the breed-specific random effect (differs for breeds A,B,C,D,E)
+- $\beta_1$ is the baseline effect or intercept
+- $\beta_2$ is the coefficient for dose
+- $\beta_3$ is the coefficient for type of erythrocytosis 
+
+Priors:
+
+$$\beta_1,\beta_2,\beta_3\sim N(0,10^{10})$$
+
+$$\alpha_1,...,\alpha_j| \sigma^2_{\alpha}\sim N(0,\sigma^2_\alpha)$$
+
+$$\sigma^2_{\alpha}\sim Inverse-Gamma(0.01,0.01)$$
+
+$$\sigma^2\sim Inverse-Gamma(0.01,0.01)$$
+
+This model was chosen because we wanted to see the relationship between various predictors on the response variable $\Delta PCV$ so a regression model was an obvious choice. More specifically this model is a hierarchical model that accounts for both fixed-effects and breed-specific random effects. This was chosen because its logical to want to account for some kind of breed specific effect on the response variable. This also allows for seeing what differences there are between domestic and non-domestic cats. A fixed effect for dose and type were added to see what the relationships between those and the response variable are. There is little to none prior information about any of the parameters so very weakly informative priors were chosen as to not have a very strong influence on the posterior distributions that will be generated.
+
+
+## Implementation
+
+The hallmark of Bayesian analysis is computing the posterior distribution but we cannot write it down in closed form
+
+$$P(\beta,\sigma^2,\alpha|y,x) \propto P(y|\alpha,\beta,\sigma^2,x)P(\beta,\alpha,sigma^2)$$
+Because of this other software was need and the main tool used was R-studio and JAGS (Just Another Gibbs Sampler) to estimate the posterior distributions for the coefficients.
+
+The data were structured into a list format that included:
+
+- n: the total number of observations,
+
+- p: the number of predictors (hydroxyurea dose and erythrocytosis type),
+
+- The observed values of $\Delta PCV$ (Y)
+
+- Dose: the hydroxyurea dose for each cat,
+
+- Type: the type of erythrocytosis (primary or secondary),
+
+- Breed: the breed of each cat (used as a random effect).
+
+As for initialization of parameters $\beta_1,\beta_2,\beta_3$ and $\alpha_1,\alpha_2,\alpha_3,\alpha_4,\alpha_5$ were set to zero. The variance parameters $\tau^2_{\alpha}$ and $\sigma^2$ were set to 1.
+
+The MCMC chains were run using JAGS, with 3 chains initialized and adapted for 10,000 iterations each. The burn-in phase was 20,000 iterations, followed by 50,000 iterations saved across the chains with thinning every 10th iteration to reduce autocorrelation in the samples. This means we took every 10th iteration and used that to generate the distribution.
+
+Lastly convergence of the Chains was assessed using density and trace plots and can be found in the supplemental material section
+
+
+# Results
+
+## Research Question 1: Is a higher dose of hydroxyurea associated with a greater reduction in packed cell volume?
+
+
+To assess the effect of dose of hydroxyurea on the change in packed cell volume $(\Delta PCV)$ the posterior distribution of the coefficient $\beta_2$ was examined. It was found for the coefficient of $\beta_2$ the posterior mean was $-0.3968$ indicating that on average for every 1 unit increase in hydroxyurea dose $\Delta PCV$ is expected to decrease by $-0.3968$. The 95% credible interval for the posterior mean of $\beta_2$ was $[-0.5414 , -0.2519]$.
+
+The figure below shows the posterior distribution for $\beta_2$
+```{r,echo=FALSE,results='hide',warning=FALSE,message=FALSE}
+
+library(rjags)
+library(MCMCvis)
+attach(catsData)
+n.breed=5
+
+
+
+n = 40
+p = dim(catsData)[2]-1 
+catsData$Breed=as.numeric(factor(catsData$Breed),levels=c(1,2,3,4,5))
+
+```
+
+```{r,echo=FALSE,results='hide',warning=FALSE,message=FALSE}
+set.seed(291)
+dataList <- list(
+        "n" = n,
+        "p" = p,
+        "J" = 5,
+        "Y" = DeltaPCV,
+        "Type" = Type,
+        "Dose" = Dose,
+        "Breed" = catsData$Breed)
+
+## (2) Specify list of parameter(s) to be monitored
+parameters <- c("alpha","beta","sig2","sig2.alpha")
+
+## (3) Specify initial values for parameter(s) in Metropolis-Hastings algorithm
+initsValues <- list(
+  list("alpha" = rep(0, 5),
+       "beta" = rep(0, p),
+       "tau2" = 1,
+       "tau2.alpha" = 1,
+       .RNG.name = "base::Wichmann-Hill",
+       .RNG.seed = 123),
+  
+  list("alpha" = rep(0, 5),
+       "beta" = rep(0, p),
+       "tau2" = 1,
+       "tau2.alpha" = 1,
+       .RNG.name = "base::Wichmann-Hill",
+       .RNG.seed = 456),
+  
+  list("alpha" = rep(0, 5),
+       "beta" = rep(0, p),
+       "tau2" = 1,
+       "tau2.alpha" = 1,
+       .RNG.name = "base::Wichmann-Hill",
+       .RNG.seed = 789)
+)
+
+## (4) Specify parameters for running Metropolis-Hastings algorithm
+adaptSteps <- 10000              # number of steps to "tune" the samplers
+burnInSteps <- 20000             # number of steps to "burn-in" the samplers
+nChains <- 3                    # number of chains to run
+numSavedSteps <- 50000          # total number of steps in chains to save
+thinSteps <- 10                  # number of steps to "thin" (1 = keep every step)
+nIter <- ceiling((numSavedSteps*thinSteps)/nChains) 	# steps per chain
+
+## (5) Create, initialize, and adapt the model
+# This will require you to create a separate .txt file which specifies
+# the model
+jagsModel <- jags.model("cat_model.txt", 
+                         data = dataList, 
+                         inits = initsValues, 
+                         n.chains = nChains, 
+                         n.adapt = adaptSteps)
+
+## (6) Burn-in the algorithm
+if(burnInSteps>0){
+        cat( "Burning in the MCMC chain...\n")
+        update(jagsModel, n.iter = burnInSteps)
+}
+
+## (7) Run MCMC algorithm
+cat("Sampling final MCMC chain...\n" )
+codaSamples <- coda.samples(jagsModel, 
+                             variable.names = parameters, 
+                             n.iter = nIter, 
+                             thin = thinSteps)
+
+## (8) Diagnose convergence and plot posterior densities
+par(ask=T)
+#plot(codaSamples[,7])
+
+
+#
+summary(codaSamples)
+#plot(codaSamples[, 1]) 
+#plot(codaSamples[, 2])  
+#plot(codaSamples[, 3])
+#plot(codaSamples[, 4]) 
+#plot(codaSamples[, 5])  
+#plot(codaSamples[, 6])
+#plot(codaSamples[, 7]) 
+#plot(codaSamples[, 8])  
+#plot(codaSamples[, 9])
+#plot(codaSamples[, 10])
+
+
+```
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+plot(codaSamples[, 7])
+invisible(title(main = "Posterior Distribution of Dose Effect (Beta2)"))
+
+```
+```{r,warning=FALSE,message=FALSE ,echo = FALSE  , fig.width=4, fig.height=4}
+summary_output <- summary(codaSamples)
+stats_table <- summary_output$statistics
+quantiles_table <- summary_output$quantiles
+knitr::kable(stats_table, digits = 4, caption = "Posterior Summary Statistics")
+
+
+knitr::kable(quantiles_table , digits = 4 , caption = "Posterior Summary Credible Intervals")    
+
+```
+## Research Question 2: Controlling for the dose of hydroxyurea administered and the type of erythrocytosis, do domestic breeds of cats have a different expected change in pack cell volume than non-domestic cats?
+
+To answer this question we can first look at a boxplot of the posterior mean summaries for each of the $\alpha_j$'s 
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE , fig.width=7, fig.height=6}
+alpha_samples = as.matrix(codaSamples)[, grep("^alpha", colnames(as.matrix(codaSamples)))]
+
+alpha_df = as.data.frame(alpha_samples)
+
+boxplot(alpha_df,
+        main = "Posterior Distributions of Alpha Parameters",
+        xlab = "Alpha Parameters",
+        ylab = "Posterior Samples",
+        col = "lightblue",
+        notch = TRUE)
+
+#alpha_summary <- summary(alpha_samples)
+#print(alpha_summary)
+```
+
+Just looking at the boxplots we can see there appears to be a difference between domestic cats (Breeds A,B,C) and non-domestic cats (Breeds D,E). The posterior means for the domestic cats are lower than for the non-domestic cats. The Posterior means and credible intervals for all $\alpha_j$'s is given by the following table
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+# Extract alpha samples
+alpha_samples = as.matrix(codaSamples)[, grep("^alpha", colnames(as.matrix(codaSamples)))]
+
+# Compute posterior means and 95% credible intervals
+alpha_means = apply(alpha_samples, 2, mean)
+alpha_CIs = t(apply(alpha_samples, 2, quantile, probs = c(0.025, 0.975)))
+
+# Combine into a data frame
+alpha_summary = data.frame(
+  Mean = alpha_means,
+  `2.5%` = alpha_CIs[, 1],
+  `97.5%` = alpha_CIs[, 2],
+  check.names = FALSE
+)
+
+
+# Create a nicely formatted table
+knitr::kable(alpha_summary, digits = 4, caption = "Posterior Summary for Alpha (Breed Effects)")
+
+```
+`
+ 
+
+Due to the fact we are interested in if there is a difference in expected change in pack cell volume of domestic cats and non-domestic cats we can average the means for domestic cats (Breeds A,B,C) and for non-domestic cats (Breeds D, E) and compute the difference.
+$$\bar\alpha_{domestic}=\frac{\alpha_1+\alpha_2+\alpha_3}{3}$$
+$$\bar\alpha_{non-domestic}=\frac{\alpha_4+\alpha_5}{2}$$
+The difference between $$\bar\alpha_{non-domestic}$$ and $$\bar\alpha_{domestic}$$ was $-2.116329$ and we can also use the difference samples we generated to get a 95% credible interval of $[-2.757295, -1.448796]$ for $\bar\alpha_{domestic}-\bar\alpha_{non-domestic}$
+
+```{r,echo=FALSE,results='hide',warning=FALSE,message=FALSE}
+
+domestic_mean = mean(c(alpha_means[1], alpha_means[2], alpha_means[3]))
+nondomestic_mean = mean(c(alpha_means[4], alpha_means[5]))
+
+
+difference=domestic_mean-nondomestic_mean
+difference_samples = rowMeans(alpha_samples[, 1:3]) - rowMeans(alpha_samples[, 4:5])
+difference_CI = quantile(difference_samples, probs = c(0.025, 0.975))
+
+cat("Mean Difference (Domestic - Non-Domestic):", difference, "\n")
+cat("95% Credible Interval for Difference:", difference_CI, "\n")
+
+```
+
+
+# Conclusion
+
+In this report our goal was to assess the efficacy of the hydroxyurea treatment in reducing packed cell volume in cats with erythrocytosis. The method used to explore this was a Bayesian analysis specifically a Bayesian hierachical linear model.
+
+In regards to the first question that asked if a higher dose of hydroxyurea is associated with a greater reduction in packed cell volume we found that the estimate for the mean of $\beta_2$ was $-0.3968$ indicating that on average for every 1 unit increase in hydroxyurea dose $\Delta PCV$ is expected to decrease by $-0.3968$. The 95% credible interval for the posterior mean of $\beta_2$ was $[-0.5414 , -0.2519]$. This means that an increase in dose is associated with a greater reduction in packed cell volume. Due to the fact that the 95% credible interval for the mean does not include zero we can conclude that the estimate is most likely statistically significant.
+
+In regards to the second question that asked if there was a difference in expected change in pack cell volume between domestic and non-domestic cats while controlling for dose we added a breed specific intercept term to our model $\alpha_j$ .The 3 $\alpha_j$'s for domestic cats were averaged and the 2 $\alpha_j$'s for non-domestic cats were averaged and subtracted them to get a difference of  $-2.116329$ and which means that on avergae the domestic breeds (breeds A, B, C) have a lower value for the breed speicific intercepts compared to non domestic breeds (breeds D,E). This indicates that the domestic breeds experience a greater baseline reduction in packed cell volume. It was also found that the 95% credible interval for $\bar\alpha_{domestic}-\bar\alpha_{non-domestic}$ was $[-2.757295, -1.448796]$ and this credible interval is only negative and doesnt include zero so we can conclude it is significant and that for domestic breeds we are 95% certain the mean is contained in this interval and it is only negative values so we can say domestic breeds have a significantly lower packed cell volume than non-domestic breeds
+
+
+
+
+
+
+
+
+
+
