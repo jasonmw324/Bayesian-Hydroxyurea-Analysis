@@ -8,9 +8,14 @@ output:
 ---
 
 ```{r,echo=FALSE,results='hide',warning=FALSE,message=FALSE}
+# Uncomment and run following line if required packages needs to be installed
+
+# install.packages(c("rjags", "tidyverse", "kableExtra", "MCMCvis"))
+
 library(rjags)
 library(tidyverse)
 library(kableExtra)
+library(MCMCvis)
 
 catsData=read.table("DATA/cats.txt",header = TRUE)
 
@@ -100,8 +105,7 @@ To assess the effect of dose of hydroxyurea on the change in packed cell volume 
 The figure below shows the posterior distribution for $\beta_2$
 ```{r,echo=FALSE,results='hide',warning=FALSE,message=FALSE}
 
-library(rjags)
-library(MCMCvis)
+
 attach(catsData)
 n.breed=5
 
