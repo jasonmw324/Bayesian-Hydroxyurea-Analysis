@@ -36,19 +36,14 @@ Hydroxyurea effectively lowers PCV in cats with erythrocytosis, with stronger ef
 ---
 ## 🗂 Repository Structure
 ```markdown
-Analyzing-Housing-Cost-Burden-in-Georgia/
-├── DATA/                                                   # Folder Containing Dataset
-│   ├── ga_housing_data.csv                                 # Dataset used for analysis        
-├── Poster/
-│   ├── Cost_Burdened_Housing_Georgia_Analysis_Poster.pdf   # Poster Summarizing Project and Results 
-├── Cost_Burdened_Housing_Analysis_Presentation_Slides.pdf  # Presentation Slides Summarizing Project                 ├── Cost_Burdened_Housing_Analysis_Report.pdf               # Final compiled PDF report generated from the Rmd file 
-├── Cost_Burdened_Housing_Georgia_Analysis.Rmd              # R Markdown file of report        
-├── README.md             
-├── apa.csl                                                 # Citation File
-├── corrplot.png                                            # Correlation Plot used in Report
-├── missing-hist.png                                        # Missing Data plot use in Report
-├── packages.bib                                            # Bibliography File
-└── pnas.csl                                                # Citation File
+Bayesian-Hydroxyurea-Analysis/
+├── DATA/                                                   # Folder Containing Model
+│   ├── cat_model.txt                                       # Model used to run analysis        
+├── .Rhistory
+├── .README.md                                              # Presentation Slides Summarizing Project                 
+├── STAT-4350-Final-Project.pdf                             # R Markdown file of report        
+├── hydroxyurea_erythrocytosis_bayesian.Rmd                 # R Markdown File of Report
+└── hydroxyurea_erythrocytosis_bayesian.pdf                 # Report 
 
 
 
@@ -60,6 +55,7 @@ Analyzing-Housing-Cost-Burden-in-Georgia/
 
 
 ## Structure
+
 
 
 
