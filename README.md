@@ -18,15 +18,7 @@ Data were collected from **40 cats**, including:
 
 ## Methods
 A **Bayesian hierarchical regression model** was implemented in **R** using **JAGS** to estimate posterior distributions.  
-Model form:  
-\[
-\mu_{ij} = \alpha_j + \beta_1 + \beta_2(Dose)_{ij} + \beta_3(Type)_{ij}
-\]
-- αⱼ: breed-specific random effects  
-- β₂: dose effect  
-- β₃: type effect  
-
-Weakly informative priors and 3 MCMC chains (50k iterations post burn-in) were used.
+- Weakly informative priors and 3 MCMC chains (50k iterations post burn-in) were used.
 
 ---
 
@@ -42,8 +34,33 @@ Weakly informative priors and 3 MCMC chains (50k iterations post burn-in) were u
 Hydroxyurea effectively lowers PCV in cats with erythrocytosis, with stronger effects at higher doses. Domestic breeds exhibit a significantly greater reduction compared to non-domestic breeds.
 
 ---
+## 🗂 Repository Structure
+```markdown
+Analyzing-Housing-Cost-Burden-in-Georgia/
+├── DATA/                                                   # Folder Containing Dataset
+│   ├── ga_housing_data.csv                                 # Dataset used for analysis        
+├── Poster/
+│   ├── Cost_Burdened_Housing_Georgia_Analysis_Poster.pdf   # Poster Summarizing Project and Results 
+├── Cost_Burdened_Housing_Analysis_Presentation_Slides.pdf  # Presentation Slides Summarizing Project                 ├── Cost_Burdened_Housing_Analysis_Report.pdf               # Final compiled PDF report generated from the Rmd file 
+├── Cost_Burdened_Housing_Georgia_Analysis.Rmd              # R Markdown file of report        
+├── README.md             
+├── apa.csl                                                 # Citation File
+├── corrplot.png                                            # Correlation Plot used in Report
+├── missing-hist.png                                        # Missing Data plot use in Report
+├── packages.bib                                            # Bibliography File
+└── pnas.csl                                                # Citation File
+
+
+
+
+
+
+
+
+
 
 ## Structure
+
 
 
 
